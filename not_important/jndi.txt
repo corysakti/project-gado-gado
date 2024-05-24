@@ -1,0 +1,53 @@
+-- please insert this jndi
+
+<datasource jta="false" jndi-name="java:/rita2cmsds" pool-name="rita2cmsds" enabled="true" use-ccm="false">
+                    <connection-url>jdbc:oracle:thin:@10.64.20.156:1521/CMSP3SIT</connection-url>
+                    <driver-class>oracle.jdbc.OracleDriver</driver-class>
+                    <driver>ojdbc8-12.2.0.jar</driver>
+                    <security>
+                        <user-name>CMS</user-name>
+                        <password>CMS</password>
+                    </security>
+                    <validation>
+                        <valid-connection-checker class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleValidConnectionChecker"/>
+                        <background-validation>true</background-validation>
+                        <stale-connection-checker class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleStaleConnectionChecker"/>
+                        <exception-sorter class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleExceptionSorter"/>
+                    </validation>
+                </datasource>
+
+
+-- before this line
+<datasource jta="false" jndi-name="java:/lmsds" pool-name="lmsds" enabled="true" use-ccm="false">
+                    <connection-url>jdbc:oracle:thin:@10.64.1.119:1521/LMSSIT</connection-url>
+                    <driver-class>oracle.jdbc.OracleDriver</driver-class>
+                    <driver>ojdbc8-12.2.0.jar</driver>
+                    <security>
+                        <user-name>MOBILYTIX</user-name>
+                        <password>MOBILYTIX</password>
+                    </security>
+                    <validation>
+                        <valid-connection-checker class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleValidConnectionChecker"/>
+                        <background-validation>true</background-validation>
+                        <stale-connection-checker class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleStaleConnectionChecker"/>
+                        <exception-sorter class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleExceptionSorter"/>
+                    </validation>
+                </datasource>
+
+-- and after this line
+
+<datasource jta="false" jndi-name="java:/crmds" pool-name="crmds" enabled="true" use-ccm="false">
+                    <connection-url>jdbc:oracle:thin:@10.64.19.141:1521:SIBUAT01</connection-url>
+                    <driver-class>oracle.jdbc.OracleDriver</driver-class>
+                    <driver>ojdbc8-12.2.0.jar</driver>
+                    <security>
+                        <user-name>interfaces</user-name>
+                        <password>interfaces!123</password>
+                    </security>
+                    <validation>
+                        <valid-connection-checker class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleValidConnectionChecker"/>
+                        <background-validation>true</background-validation>
+                        <stale-connection-checker class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleStaleConnectionChecker"/>
+                        <exception-sorter class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleExceptionSorter"/>
+                    </validation>
+                </datasource>

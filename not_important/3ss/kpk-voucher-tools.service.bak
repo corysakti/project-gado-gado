@@ -1,0 +1,131 @@
+[Unit]
+Description= KPK Voucher Tools
+
+[Service]
+User=odp
+Group=odp
+Type=simple
+WorkingDirectory=/app/kpk-voucher-tools
+
+#3SS CHANNEL
+Environment="CHANNEL=3SS1"
+
+#DATABASE CONFIGURATION
+#3SS DATABASE
+Environment="TRISS_DATASOURCE_URL=jdbc:oracle:thin:@10.64.1.65:1521/SIT3SS"
+Environment="TRISS_DATASOURCE_USERNAME=TRISS"
+Environment="TRISS_DATASOURCE_PASSWORD=TRISS"
+Environment="TRISS_DATASOURCE_DRIVER_CLASS_NAME=oracle.jdbc.driver.OracleDriver"
+
+#CRM DATABASE
+Environment="CRM_DATASOURCE_URL=jdbc:oracle:thin:@10.64.19.141:1521/SIBUAT01"
+Environment="CRM_DATASOURCE_USERNAME=interfaces"
+Environment="CRM_DATASOURCE_PASSWORD=interfaces!123"
+Environment="CRM_DATASOURCE_DRIVER_CLASS_NAME=oracle.jdbc.driver.OracleDriver"
+
+#VMS DATABASE
+Environment="VMS_DATASOURCE_URL=jdbc:oracle:thin:@10.64.93.35:1521/vmssit"
+Environment="VMS_DATASOURCE_USERNAME=PRETUPS_LIVE"
+Environment="VMS_DATASOURCE_PASSWORD=PRETUPS_LIVE"
+Environment="VMS_DATASOURCE_DRIVER_CLASS_NAME=oracle.jdbc.driver.OracleDriver"
+
+
+
+#CRON CONFIGURATION
+#REVOKE VALIDITY
+#Environment="TRISS_CRON_CONFIG=0 */10 * * * ?"
+#Environment="CRM_CRON_CONFIG=0 */10 * * * ?"
+#Environment="REVOKE_CRON_CONFIG=0 */3 * * * ?"
+Environment="SENDINGQUOTA_CRON_CONFIG=0 */2 * * * ?"
+Environment="SENDINGQUOTAFILE_CRON_CONFIG=0 */20 * * * ?"
+
+
+#Run every 30 Feb, means is never be run
+Environment="TRISS_CRON_CONFIG=* * * 30 2 ?"
+Environment="CRM_CRON_CONFIG=* * * 30 2 ?"
+Environment="REVOKE_CRON_CONFIG=* * * 30 2 ?"
+#Environment="SENDINGQUOTA_CRON_CONFIG=* * * 30 2 ?"
+#Environment="SENDINGQUOTAFILE_CRON_CONFIG=* * * 30 2 ?"
+
+#SUBS INFO REQUEST
+Environment="SUBS_INFO_CSV2DB_CRON_CONFIG=* * * 30 2 ?"
+Environment="SUBS_INFO_SMSC_CRON_CONFIG=* * * 30 2 ?"
+Environment="SUBS_INFO_DELETEROW_CRON_CONFIG=* * * 30 2 ?"
+
+
+#SMS ONBOARDING
+Environment="SMS_ONBOARDING_MSTR2TRN_CRON_CONFIG=* * * 30 2 ?"
+Environment="SMS_ONBOARDING_POPULATENEWTRN_CRON_CONFIG=* * * 30 2 ?"
+Environment="SMS_ONBOARDING_WRITESENDFILE_CRON_CONFIG=* * * 30 2 ?"
+Environment="SMS_ONBOARDING_DELIVERY_REPORT_CRON_CONFIG=* * * 30 2 ?"
+Environment="SMS_ONBOARDING_CHECK_TRIGER_CRON_CONFIG=* * * 30 2 ?"
+
+
+#ENDPOINT CONFIGURATION
+Environment="SMSC_API6D_ENDPOINT=http://10.64.16.161:4748/Cdr"
+Environment="API_QUOTA_BALANCE=http://10.64.19.16:9090/eai/query/subscription"
+Environment="TIBCO_GENERIC_ENDPOINT=http://10.64.19.17:52040/Business_Process/GenericTibcoQueryServices/GenericTIBCOQueryServices.serviceagent/GenericQueryPTEndpoint1"
+
+
+
+#SERVER CONFIGURATION
+#3SS CMS SERVER
+Environment="SUBS_INFO_CSV_FILE_HOST=10.64.1.61"
+Environment="CSV_FILE_HOST=10.64.1.61"
+Environment="CSV_FILE_SFTP_USERNAME=appuser"
+Environment="CSV_FILE_SFTP_PASSWORD=#SSuser@321"
+
+#6D OR SMSC SERVER
+Environment="SMS_ONBOARDING_FILE6D_HOST=10.64.88.47"
+Environment="SMS_ONBOARDING_FILE6D_USERNAME=appuser"
+Environment="SMS_ONBOARDING_FILE6D_PASSWORD=0neT1meP@55"
+
+# SSH CONFIG
+Environment="SSH_FRONT_END_1_HOST=10.64.1.61"
+Environment="SSH_FRONT_END_1_USERNAME=appuser"
+Environment="SSH_FRONT_END_1_PASSWORD=3SSuser@123"
+
+Environment="SSH_FRONT_END_2_HOST=10.64.1.61"
+Environment="SSH_FRONT_END_2_USERNAME=appuser"
+Environment="SSH_FRONT_END_2_PASSWORD=3SSuser@123"
+
+
+#HRN Voucher approval through email
+Environment="HRN_EXPIRATE_TIME=86400"
+Environment="HRN_TOKEN_SECRET=ThisIsSecretForJWTHS512SignatureAlgorithmThatMUSTHave64ByteLength"
+
+Environment="SMS_ONBOARDING_DLVRY_REPORT_HOST=10.64.88.46"
+Environment="SMS_ONBOARDING_DLVRY_REPORT_USERNAME=appuser"
+Environment="SMS_ONBOARDING_DLVRY_REPORT_PASSWORD=0neT1meP@55"
+
+#DIRECTORY CONFIGURATION
+Environment="DIR_VOLTE_LOCAL=/app/kpk-voucher-tools/data/volte"
+
+#CONTEXT FOR UTIL CONFIGURATION
+#SMS ONBOARDING GRID SIZE
+Environment="SMS_ONBOARDING_GRID_SIZE=100"
+
+
+Environment="HTTP_CONNECTION_TIMEOUT=10000"
+
+
+Environment="BATCH_REVOKE_INPUT_FILE=/app/kpk-voucher-tools/data/revokeinputdata.csv"
+Environment="BATCH_REVOKE_SFTP_HOST=TRISSCMS"
+Environment="BATCH_REVOKE_SFTP_PATH=/app/uploads/bulk-revoke"
+Environment="BATCH_REVOKE_SFTP_USERNAME=appuser"
+Environment="BATCH_REVOKE_SFTP_PASSWORD=NULL"
+
+Environment="BATCH_SENDINGQUOTA_INPUT_FILE=/app/kpk-voucher-tools/data/sendingquotainputdata.csv"
+Environment="BATCH_SENDINGQUOTA_SFTP_HOST=10.64.1.61"
+Environment="BATCH_SENDINGQUOTA_SFTP_PATH=/app/uploads/gratification/input"
+Environment="BATCH_SENDINGQUOTA_SFTP_USERNAME=appuser"
+Environment="BATCH_SENDINGQUOTA_SFTP_PASSWORD=#SSuser@321"
+
+
+Environment="SSH_KEY_GEN_PATH=/home/odp/.ssh/id_rsa"
+
+ExecStart=/usr/bin/openjdk11/bin/java -jar -Xmx6g -Djavamelody.disabled=true /app/kpk-voucher-tools/kpk-voucher-tools.jar
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target

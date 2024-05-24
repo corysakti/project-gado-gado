@@ -1,0 +1,656 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<server xmlns="urn:jboss:domain:4.1">
+
+    <extensions>
+        <extension module="org.jboss.as.clustering.infinispan"/>
+        <extension module="org.jboss.as.connector"/>
+        <extension module="org.jboss.as.deployment-scanner"/>
+        <extension module="org.jboss.as.ee"/>
+        <extension module="org.jboss.as.ejb3"/>
+        <extension module="org.jboss.as.jaxrs"/>
+        <extension module="org.jboss.as.jdr"/>
+        <extension module="org.jboss.as.jmx"/>
+        <extension module="org.jboss.as.jpa"/>
+        <extension module="org.jboss.as.jsf"/>
+        <extension module="org.jboss.as.logging"/>
+        <extension module="org.jboss.as.mail"/>
+        <extension module="org.jboss.as.naming"/>
+        <extension module="org.jboss.as.pojo"/>
+        <extension module="org.jboss.as.remoting"/>
+        <extension module="org.jboss.as.sar"/>
+        <extension module="org.jboss.as.security"/>
+        <extension module="org.jboss.as.transactions"/>
+        <extension module="org.jboss.as.webservices"/>
+        <extension module="org.jboss.as.weld"/>
+        <extension module="org.wildfly.extension.batch.jberet"/>
+        <extension module="org.wildfly.extension.bean-validation"/>
+        <extension module="org.wildfly.extension.io"/>
+        <extension module="org.wildfly.extension.request-controller"/>
+        <extension module="org.wildfly.extension.security.manager"/>
+        <extension module="org.wildfly.extension.undertow"/>
+    </extensions>
+
+    <system-properties>
+        <property name="http.proxyHost" value="proxy.hutch.co.id"/>
+        <property name="http.proxyPort" value="8080"/>
+        <property name="http.nonProxyHosts" value="localhost|127.0.0.1|10.*"/>
+        <property name="https.proxyHost" value="proxy.hutch.co.id"/>
+        <property name="https.proxyPort" value="8080"/>
+        <property name="https.nonProxyHosts" value="localhost|127.0.0.1|10.*"/>
+    </system-properties>
+
+
+    <management>
+        <security-realms>
+            <security-realm name="ManagementRealm">
+                <authentication>
+                    <local default-user="$local" skip-group-loading="true"/>
+                    <properties path="mgmt-users.properties" relative-to="jboss.server.config.dir"/>
+                </authentication>
+                <authorization map-groups-to-roles="false">
+                    <properties path="mgmt-groups.properties" relative-to="jboss.server.config.dir"/>
+                </authorization>
+            </security-realm>
+            <security-realm name="ApplicationRealm">
+                <authentication>
+                    <local default-user="$local" allowed-users="*" skip-group-loading="true"/>
+                    <properties path="application-users.properties" relative-to="jboss.server.config.dir"/>
+                </authentication>
+                <authorization>
+                    <properties path="application-roles.properties" relative-to="jboss.server.config.dir"/>
+                </authorization>
+            </security-realm>
+        </security-realms>
+        <audit-log>
+            <formatters>
+                <json-formatter name="json-formatter"/>
+            </formatters>
+            <handlers>
+                <file-handler name="file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.server.data.dir"/>
+            </handlers>
+            <logger log-boot="true" log-read-only="false" enabled="false">
+                <handlers>
+                    <handler name="file"/>
+                </handlers>
+            </logger>
+        </audit-log>
+        <management-interfaces>
+            <http-interface security-realm="ManagementRealm" http-upgrade-enabled="true">
+                <socket-binding http="management-http"/>
+            </http-interface>
+        </management-interfaces>
+        <access-control provider="simple">
+            <role-mapping>
+                <role name="SuperUser">
+                    <include>
+                        <user name="$local"/>
+                    </include>
+                </role>
+            </role-mapping>
+        </access-control>
+    </management>
+
+    <profile>
+        <subsystem xmlns="urn:jboss:domain:logging:3.0">
+            <console-handler name="CONSOLE">
+                <level name="INFO"/>
+                <formatter>
+                    <named-formatter name="COLOR-PATTERN"/>
+                </formatter>
+            </console-handler>
+            <periodic-rotating-file-handler name="FILE" autoflush="true">
+                <formatter>
+                    <named-formatter name="PATTERN"/>
+                </formatter>
+                <file relative-to="jboss.server.log.dir" path="server.log"/>
+                <suffix value=".yyyy-MM-dd"/>
+                <append value="true"/>
+            </periodic-rotating-file-handler>
+            <logger category="com.arjuna">
+                <level name="WARN"/>
+            </logger>
+            <logger category="org.jboss.as.config">
+                <level name="DEBUG"/>
+            </logger>
+            <logger category="sun.rmi">
+                <level name="WARN"/>
+            </logger>
+            <root-logger>
+                <level name="INFO"/>
+                <handlers>
+                    <handler name="CONSOLE"/>
+                    <handler name="FILE"/>
+                </handlers>
+            </root-logger>
+            <formatter name="PATTERN">
+                <pattern-formatter pattern="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
+            </formatter>
+            <formatter name="COLOR-PATTERN">
+                <pattern-formatter pattern="%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
+            </formatter>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:batch-jberet:1.0">
+            <default-job-repository name="in-memory"/>
+            <default-thread-pool name="batch"/>
+            <job-repository name="in-memory">
+                <in-memory/>
+            </job-repository>
+            <thread-pool name="batch">
+                <max-threads count="10"/>
+                <keepalive-time time="30" unit="seconds"/>
+            </thread-pool>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:bean-validation:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:datasources:4.0">
+            <datasources>
+                <datasource jndi-name="java:jboss/datasources/ExampleDS" pool-name="ExampleDS" enabled="true" use-java-context="true">
+                    <connection-url>jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</connection-url>
+                    <driver>h2</driver>
+                    <security>
+                        <user-name>sa</user-name>
+                        <password>sa</password>
+                    </security>
+                </datasource>
+                <datasource jta="true" jndi-name="java:/rita2ds" pool-name="rita2ds" enabled="true" use-ccm="true">
+                    <connection-url>jdbc:oracle:thin:@10.64.20.160:1521/ng2sit</connection-url>
+                    <driver-class>oracle.jdbc.OracleDriver</driver-class>
+                    <driver>ojdbc8-12.2.0.jar</driver>
+                    <pool>
+                        <min-pool-size>10</min-pool-size>
+                        <initial-pool-size>20</initial-pool-size>
+                        <max-pool-size>100</max-pool-size>
+                        <prefill>false</prefill>
+                        <flush-strategy>IdleConnections</flush-strategy>
+                    </pool>
+                    <security>
+                        <user-name>RITA2</user-name>
+                        <password>RITA2</password>
+                    </security>
+                    <validation>
+                        <valid-connection-checker class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleValidConnectionChecker"/>
+                        <check-valid-connection-sql>select 1 from dual</check-valid-connection-sql>
+                        <background-validation>true</background-validation>
+                        <background-validation-millis>3000</background-validation-millis>
+                        <stale-connection-checker class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleStaleConnectionChecker"/>
+                        <exception-sorter class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleExceptionSorter"/>
+                    </validation>
+                    <timeout>
+                        <set-tx-query-timeout>true</set-tx-query-timeout>
+                        <blocking-timeout-millis>4000</blocking-timeout-millis>
+                        <idle-timeout-minutes>1</idle-timeout-minutes>
+                        <query-timeout>40</query-timeout>
+                    </timeout>
+                </datasource>
+                <datasource jta="true" jndi-name="java:/mobiortds" pool-name="mobiortds" enabled="true" use-ccm="true">
+                    <connection-url>jdbc:oracle:thin:@10.64.20.160:1521/ng2sit</connection-url>
+                    <driver-class>oracle.jdbc.OracleDriver</driver-class>
+                    <driver>ojdbc8-12.2.0.jar</driver>
+                    <pool>
+                        <min-pool-size>10</min-pool-size>
+                        <initial-pool-size>20</initial-pool-size>
+                        <max-pool-size>100</max-pool-size>
+                        <flush-strategy>IdleConnections</flush-strategy>
+                    </pool>
+                    <security>
+                        <user-name>angie_two</user-name>
+                        <password>angie_two#123</password>
+                    </security>
+                    <validation>
+                        <valid-connection-checker class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleValidConnectionChecker"/>
+                        <check-valid-connection-sql>select 1 from dual</check-valid-connection-sql>
+                        <background-validation>true</background-validation>
+                        <background-validation-millis>3000</background-validation-millis>
+                        <stale-connection-checker class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleStaleConnectionChecker"/>
+                        <exception-sorter class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleExceptionSorter"/>
+                    </validation>
+                    <timeout>
+                        <set-tx-query-timeout>true</set-tx-query-timeout>
+                        <blocking-timeout-millis>3000</blocking-timeout-millis>
+                        <idle-timeout-minutes>1</idle-timeout-minutes>
+                        <query-timeout>3</query-timeout>
+                    </timeout>
+                </datasource>
+                <datasource jta="false" jndi-name="java:/lmsds" pool-name="lmsds" enabled="true" use-ccm="false">
+                    <connection-url>jdbc:oracle:thin:@10.64.1.119:1521/LMSSIT</connection-url>
+                    <driver-class>oracle.jdbc.OracleDriver</driver-class>
+                    <driver>ojdbc8-12.2.0.jar</driver>
+                    <security>
+                        <user-name>MOBILYTIX</user-name>
+                        <password>MOBILYTIX</password>
+                    </security>
+                    <validation>
+                        <valid-connection-checker class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleValidConnectionChecker"/>
+                        <background-validation>true</background-validation>
+                        <stale-connection-checker class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleStaleConnectionChecker"/>
+                        <exception-sorter class-name="org.jboss.jca.adapters.jdbc.extensions.oracle.OracleExceptionSorter"/>
+                    </validation>
+                </datasource>
+                <drivers>
+                    <driver name="h2" module="com.h2database.h2">
+                        <xa-datasource-class>org.h2.jdbcx.JdbcDataSource</xa-datasource-class>
+                    </driver>
+                </drivers>
+            </datasources>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:deployment-scanner:2.0">
+            <deployment-scanner path="deployments" relative-to="jboss.server.base.dir" scan-interval="5000" runtime-failure-causes-rollback="${jboss.deployment.scanner.rollback.on.failure:false}"/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:ee:4.0">
+            <spec-descriptor-property-replacement>false</spec-descriptor-property-replacement>
+            <concurrent>
+                <context-services>
+                    <context-service name="default" jndi-name="java:jboss/ee/concurrency/context/default" use-transaction-setup-provider="true"/>
+                </context-services>
+                <managed-thread-factories>
+                    <managed-thread-factory name="default" jndi-name="java:jboss/ee/concurrency/factory/default" context-service="default"/>
+                </managed-thread-factories>
+                <managed-executor-services>
+                    <managed-executor-service name="default" jndi-name="java:jboss/ee/concurrency/executor/default" context-service="default" hung-task-threshold="60000" keepalive-time="5000"/>
+                </managed-executor-services>
+                <managed-scheduled-executor-services>
+                    <managed-scheduled-executor-service name="default" jndi-name="java:jboss/ee/concurrency/scheduler/default" context-service="default" hung-task-threshold="60000" keepalive-time="3000"/>
+                </managed-scheduled-executor-services>
+            </concurrent>
+            <default-bindings context-service="java:jboss/ee/concurrency/context/default" datasource="java:jboss/datasources/ExampleDS" managed-executor-service="java:jboss/ee/concurrency/executor/default" managed-scheduled-executor-service="java:jboss/ee/concurrency/scheduler/default" managed-thread-factory="java:jboss/ee/concurrency/factory/default"/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:ejb3:4.0">
+            <session-bean>
+                <stateless>
+                    <bean-instance-pool-ref pool-name="slsb-strict-max-pool"/>
+                </stateless>
+                <stateful default-access-timeout="5000" cache-ref="simple" passivation-disabled-cache-ref="simple"/>
+                <singleton default-access-timeout="5000"/>
+            </session-bean>
+            <pools>
+                <bean-instance-pools>
+                    <strict-max-pool name="slsb-strict-max-pool" derive-size="from-worker-pools" instance-acquisition-timeout="5" instance-acquisition-timeout-unit="MINUTES"/>
+                    <strict-max-pool name="mdb-strict-max-pool" derive-size="from-cpu-count" instance-acquisition-timeout="5" instance-acquisition-timeout-unit="MINUTES"/>
+                </bean-instance-pools>
+            </pools>
+            <caches>
+                <cache name="simple"/>
+                <cache name="distributable" passivation-store-ref="infinispan" aliases="passivating clustered"/>
+            </caches>
+            <passivation-stores>
+                <passivation-store name="infinispan" cache-container="ejb" max-size="10000"/>
+            </passivation-stores>
+            <async thread-pool-name="default"/>
+            <timer-service thread-pool-name="default" default-data-store="default-file-store">
+                <data-stores>
+                    <file-data-store name="default-file-store" path="timer-service-data" relative-to="jboss.server.data.dir"/>
+                </data-stores>
+            </timer-service>
+            <remote connector-ref="http-remoting-connector" thread-pool-name="default"/>
+            <thread-pools>
+                <thread-pool name="default">
+                    <max-threads count="10"/>
+                    <keepalive-time time="100" unit="milliseconds"/>
+                </thread-pool>
+            </thread-pools>
+            <default-security-domain value="other"/>
+            <default-missing-method-permissions-deny-access value="true"/>
+            <log-system-exceptions value="true"/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:io:1.1">
+            <worker name="default"/>
+            <buffer-pool name="default"/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:infinispan:4.0">
+            <cache-container name="server" default-cache="default" module="org.wildfly.clustering.server">
+                <local-cache name="default">
+                    <transaction mode="BATCH"/>
+                </local-cache>
+            </cache-container>
+            <cache-container name="web" default-cache="passivation" module="org.wildfly.clustering.web.infinispan">
+                <local-cache name="passivation">
+                    <locking isolation="REPEATABLE_READ"/>
+                    <transaction mode="BATCH"/>
+                    <file-store passivation="true" purge="false"/>
+                </local-cache>
+                <local-cache name="persistent">
+                    <locking isolation="REPEATABLE_READ"/>
+                    <transaction mode="BATCH"/>
+                    <file-store passivation="false" purge="false"/>
+                </local-cache>
+            </cache-container>
+            <cache-container name="ejb" aliases="sfsb" default-cache="passivation" module="org.wildfly.clustering.ejb.infinispan">
+                <local-cache name="passivation">
+                    <locking isolation="REPEATABLE_READ"/>
+                    <transaction mode="BATCH"/>
+                    <file-store passivation="true" purge="false"/>
+                </local-cache>
+                <local-cache name="persistent">
+                    <locking isolation="REPEATABLE_READ"/>
+                    <transaction mode="BATCH"/>
+                    <file-store passivation="false" purge="false"/>
+                </local-cache>
+            </cache-container>
+            <cache-container name="hibernate" default-cache="local-query" module="org.hibernate.infinispan">
+                <local-cache name="entity">
+                    <transaction mode="NON_XA"/>
+                    <eviction strategy="LRU" max-entries="10000"/>
+                    <expiration max-idle="100000"/>
+                </local-cache>
+                <local-cache name="local-query">
+                    <eviction strategy="LRU" max-entries="10000"/>
+                    <expiration max-idle="100000"/>
+                </local-cache>
+                <local-cache name="timestamps"/>
+            </cache-container>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:jca:4.0">
+            <archive-validation enabled="true" fail-on-error="true" fail-on-warn="false"/>
+            <bean-validation enabled="true"/>
+            <default-workmanager>
+                <short-running-threads>
+                    <core-threads count="50"/>
+                    <queue-length count="50"/>
+                    <max-threads count="50"/>
+                    <keepalive-time time="10" unit="seconds"/>
+                </short-running-threads>
+                <long-running-threads>
+                    <core-threads count="50"/>
+                    <queue-length count="50"/>
+                    <max-threads count="50"/>
+                    <keepalive-time time="10" unit="seconds"/>
+                </long-running-threads>
+            </default-workmanager>
+            <cached-connection-manager/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:jdr:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:jmx:1.3">
+            <expose-resolved-model/>
+            <expose-expression-model/>
+            <remoting-connector/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:jpa:1.1">
+            <jpa default-datasource="" default-extended-persistence-inheritance="DEEP"/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:jsf:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:mail:2.0">
+            <mail-session name="default" jndi-name="java:jboss/mail/Default">
+                <smtp-server outbound-socket-binding-ref="mail-smtp"/>
+            </mail-session>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:naming:2.0">
+            <bindings>
+                <simple name="java:/rita2.imageserver.url" value="https://rita2sit.tri.co.id/images/" type="java.lang.String"/>
+                <simple name="java:/rita2.upload.imageserver.url" value="http://10.64.30.10/images/rest/api/uploadfile" type="java.lang.String"/>
+                <simple name="java:/genericTibcoCrmEndPoint" value="http://10.64.19.16:46030/Business_Process/GenericTibcoCRMServices/GenericTibcoCRMServices.serviceagent/PortTypeEndpoint1" type="java.lang.String"/>
+                <simple name="java:/genericRita2EndPoint" value="http://10.64.19.14:2444/Business_Process/P3_Trade_Program/Generic_RITA_APP.serviceagent/RITA_AppEndpoint1" type="java.lang.String"/>
+                <simple name="java:/kpkSpvRita2EndPoint" value="http://10.64.19.15:2022/Business_Process/Retailer_SPV_Return/Retailer_Stock_Validate" type="java.lang.String"/>
+                <simple name="java:/generictibco.mobileapps.balancedetails.endpoint" value="http://10.64.19.14:2032/Business_Process/GenericTibco_MobileApps_Services/GenericTibco_MobileApps_Services.serviceagent/BalanceDetailsDisplayEndpoint1"/>
+                <simple name="java:/generictibco.mobileapps.whitelisttoprepreg.endpoint" value="http://10.64.19.14:2032/Business_Process/GenericTibco_MobileApps_Services/GenericTibco_MobileApps_Services.serviceagent/WhitelistToPrepRegEndpoint1"/>
+                <simple name="java:/generictibco.mobileapps.initiatesimupgrade.endpoint" value="http://10.64.19.14:2032/Business_Process/GenericTibco_MobileApps_Services/GenericTibco_MobileApps_Services.serviceagent/SIMVerifyEndpoint1"/>
+                <simple name="java:/tibco.rita.pointri.redeem" value="http://10.64.19.14:8044/"/>
+                <simple name="java:/forgetPinUrl" value="http://10.64.19.14:2434/" type="java.lang.String"/>
+                <simple name="java:/changePinUrl" value="http://10.64.19.14:2434/" type="java.lang.String"/>
+                <simple name="java:/spring.profiles.active" value="sit" type="java.lang.String"/>
+                <simple name="java:/prefix" value="M" type="java.lang.String"/>
+                <simple name="java:/tibcoSocketTimeout" value="35000" type="java.lang.String"/>
+                <simple name="java:/tibcoConnectionTimeout" value="35000" type="java.lang.String"/>
+                <simple name="java:/doku.url" value="https://staging.doku.com" type="java.lang.String"/>
+                <simple name="java:/doku.mallid" value="4407" type="java.lang.String"/>
+                <simple name="java:/doku.sharedkey" value="R20Bco6cGE3g" type="java.lang.String"/>
+                <simple name="java:/doku.creditcard" value="15" type="java.lang.String"/>
+                <simple name="java:/doku.mandiri" value="02" type="java.lang.String"/>
+                <simple name="java:/doku.danamon" value="26" type="java.lang.String"/>
+                <simple name="java:/doku.permatanet" value="13" type="java.lang.String"/>
+                <simple name="java:/doku.dokuwallet" value="04" type="java.lang.String"/>
+                <simple name="java:/doku.ibmuamalat" value="25" type="java.lang.String"/>
+                <simple name="java:/doku.bri" value="06" type="java.lang.String"/>
+                <simple name="java:/generictibco.ops.endpoint" value="http://10.64.19.15:6015/Business_Process/GenericTibcoListener/GenericTIbcoService.serviceagent/GenericTibcoOpsEndpoint1" type="java.lang.String"/>
+                <simple name="java:/generictibco.ops.endpoint.saltkey" value="abcdef1234567890" type="java.lang.String"/>
+                <simple name="java:/cuanUrlPay" value="http://10.64.20.23/sso/cuan/pay" type="java.lang.String"/>
+                <simple name="java:/cuanUrlCallback" value="http://10.64.20.23/sso/cuan/acknowledge" type="java.lang.String"/>
+                <simple name="java:/tibco.rita.product" value="http://10.64.19.14:2452/EAI/Query/ProductList" type="java.lang.String"/>
+                <simple name="java:/tibco.rita.pinvalidation" value="http://10.64.19.14:2032/Business_Process/GenericTibco_MobileApps_Services/GenericTibco_MobileApps_Services.serviceagent/RETPINValidationEndpoint1" type="java.lang.String"/>
+                <simple name="java:/tibco.rita.tripoints" value="http://10.64.19.14:2032/Business_Process/GenericTibco_MobileApps_Services/GenericTibco_MobileApps_Services.serviceagent/BalanceDetailsDisplayEndpoint1" type="java.lang.String"/>
+                <simple name="java:/tibco.rita.activationproduct" value="http://10.64.19.14:2443/Business_Process/Retailer_Sellout_Transactions/Receive_Request_RetailerApp" type="java.lang.String"/>
+                <simple name="java:/pool.max.size" value="50"/>
+                <simple name="java:/pool.queue.capacity" value="50"/>
+                <simple name="java:/product.type.production.0" value="FRC,ESIM,ESIMFRC" type="java.lang.String"/>
+                <simple name="java:/product.type.production.1" value="SPV0,SPVBLANK" type="java.lang.String"/>
+                <simple name="java:/product.type.production.2" value="ADDON" type="java.lang.String"/>
+                <simple name="java:/product.type.production.3" value="RITATOPUP,RITAPACKAGE,VASPRODUCTS,RITABILLINGPACKAGE,RITA NONDATA,RITA_TOPUPALL" type="java.lang.String"/>
+                <simple name="java:/product.type.production.4" value="FRC,ESIM,ESIMFRC,KPK,SPV0,SPVBLANK,ADDON,RITATOPUP,RITAPACKAGE,VASPRODUCTS,RITABILLINGPACKAGE,RITA NONDATA" type="java.lang.String"/>
+                <simple name="java:/product.type.production.5" value="SPV0" type="java.lang.String"/>
+                <simple name="java:/product.type.production.6" value="RITABILLINGPACKAGE,RITA NONDATA" type="java.lang.String"/>
+                <simple name="java:/product.type.recharges" value="RITATOPUP,RITAPACKAGE,VASPRODUCTS" type="java.lang.String"/>
+                <simple name="java:/channel.product" value="RITA" type="java.lang.String"/>
+                <simple name="java:/product.product" value="#" type="java.lang.String"/>
+                <simple name="java:/product.map.FRC" value="FRC" type="java.lang.String"/>
+                <simple name="java:/product.map.KPK" value="KPK" type="java.lang.String"/>
+                <simple name="java:/product.map.ADDON" value="ADDON" type="java.lang.String"/>
+                <simple name="java:/product.map.SPVBLANK" value="SPVBLANK" type="java.lang.String"/>
+                <simple name="java:/product.map.SPV0" value="SPV0" type="java.lang.String"/>
+                <simple name="java:/product.map.RITATOPUP" value="RITA_TOPUP" type="java.lang.String"/>
+                <simple name="java:/product.map.RITAPACKAGE" value="RITA_PACKAGE" type="java.lang.String"/>
+                <simple name="java:/product.map.VASPRODUCTS" value="VAS_PRODUCTS" type="java.lang.String"/>
+                <simple name="java:/genericRita2EndPointTC" value="http://10.64.19.14:2463/Business_Process/P3_Trade_Program/RITA/TreasureChestEnquiry" type="java.lang.String"/>
+                <simple name="java:/genericRita2EndPointTCProses" value="http://10.64.19.14:2462/Business_Process/P3_Trade_Program/RITA/TreasureChest.serviceagent/TreasureChest" type="java.lang.String"/>
+                <simple name="java:/masherybaseurl" value="https://10.64.46.79:8083/v2/json-rpc" type="java.lang.String"/>
+                <simple name="java:/masheryservicekey" value="j8zjbewb9q2ykp77vbxavbw3" type="java.lang.String"/>
+                <simple name="java:/masheryclientid" value="dps5dfcbpevt4j9e9wr62xah" type="java.lang.String"/>
+                <simple name="java:/masheryclientsecret" value="BPcfcWYbpg" type="java.lang.String"/>
+                <simple name="java:/masheryapiusername" value="hutch" type="java.lang.String"/>
+                <simple name="java:/masheryapipassword" value="Hutch123" type="java.lang.String"/>
+                <simple name="java:/midtransbaseapi" value="https://api.sandbox.midtrans.com/" type="java.lang.String"/>
+                <simple name="java:/midtranscallbackurl" value="https://rita2.tri.co.id/" type="java.lang.String"/>
+                <simple name="java:/midtranscallbackcuanurl" value="https://cuan.tri.co.id/" type="java.lang.String"/>
+                <simple name="java:/midtransmerchantid" value="G943952959" type="java.lang.String"/>
+                <simple name="java:/midtransclientkey" value="SB-Mid-client-prih4oA5OnB3Ok-G" type="java.lang.String"/>
+                <simple name="java:/midtransserverkey" value="SB-Mid-server-T1S_xMonpBWRxtnnXujRxgGa" type="java.lang.String"/>
+                <simple name="java:/cuanserverkey" value="r1tA22oZ0enCRyPt" type="java.lang.String"/>
+                <simple name="java:/generictibco.topup.3sakti.endpoint" value="http://10.64.19.15:6015/Business_Process/GenericTibcoListener/GenericTIbcoService.serviceagent/GenericTibcoOpsEndpoint1" type="java.lang.String"/>
+                <simple name="java:/danamerchantid" value="216620000000752111291" type="java.lang.String"/>
+                <simple name="java:/danaclientid" value="2020051111757128132461" type="java.lang.String"/>
+                <simple name="java:/danaclientsecret" value="1275c513ec91480699355b5ec094d076" type="java.lang.String"/>
+                <simple name="java:/danaproductcode" value="51051000100000000001" type="java.lang.String"/>
+                <simple name="java:/danawebauthurl" value="https://m.sandbox.dana.id/m/portal/oauth" type="java.lang.String"/>
+                <simple name="java:/danawebauthcallback" value="https://rita2sit.tri.co.id/api/v2/inbound/dana/oauth" type="java.lang.String"/>
+                <simple name="java:/dananotifycallback" value="https://rita2sit.tri.co.id/api/v2/inbound/dana/notify" type="java.lang.String"/>
+                <simple name="java:/dananotifyredirect" value="https://cuanweb.tri.co.id/" type="java.lang.String"/>
+                <simple name="java:/danabaseapi" value="https://api.sandbox.dana.id/" type="java.lang.String"/>
+                <simple name="java:/danaprivatekey" value="MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCwXZg4K4VMtrMrttfTtAp2tGs4EcVbn1AMRaznBdilkilXyYOD2rAhm1/ifLj6a2+Dro4PbTIXnUyavD2LQ/3x2qyud3gNoaOAExpuCduL0aXQvCX/ITRCqZZpcenUgqWNWLQv3m9xZLW7bRNgPtp1KaBUEtvU0rexO2i0XjABhTYRlcn780An+uEqM28Rq64KjQwZNHR9v/pcDf68rgM+WFzqyWyzL2jE7o+axzPwlUEuRVK1c1p63yRn9OlVR81wiewKfYICKiK42yLleR0QJYzIkSZORIZrVE/0YPNNDtCt2YYz3MTH53UMlv6oWDAreD5S9WJr1VBIXfVeCrhzAgMBAAECggEAS5DOl8KN6sCdJC3Da8HIefPzvKJgnVE1SwzPeGzY1pg5fpOo9eXNcZjRDInD+AfwT8uKsrFmtReAqwvckr8fH3FCa75kgfKvy0BkIqG2n8HD+hujbB0d9zIScDuOpK8Vn+pRyfDUbxFnjFa/5o0HrQuY1mz+I8HlUtrRkfaJOxzSVTQ3+c4ZzAr5NQW9h1GmagZB/tFz4yeqcOwG2GL+dxYn5TyrDcUTK2vFSDrRlA4VPdv9bnj7YBzQjvK0IMr/lc5Ahedgz72fgAjjZs+OPwVHilncTGGntTknyCu4IqFl4jhaIPT/m5rdGLwjDXZj4RwL43glTN+5M4uAJFbYAQKBgQDannYHIqi3WfN9ey7AeAfqcG0HsqhSVYjgvpSNVNKzTDNTk5sXeA5M+fNhNfzpBE9qLKrryXH8eYmDiF5V8J1GzlakwxSlw6NXPe15gB2CzkWY000Wv1LDGhzZgsJuRMlDXansjyxBNDcWxmzePtaqZ3XtkFUXNuARYuFA+LiyQQKBgQDOhZb2NnIti1LBejkr7arurD4/k7w+2eyVO9Q/n8fZaIxSK9D5Yl3tZuy72aFcJU+HQMDO+hid0BoblnplHvLfmzfjd3ltnFWk2KVHhUayfAtcsgHr6NF9F3HWadsyxvs6IouH6IbKUV502dh6eLxw++ClqQ/zDmcdK8DKtxbVswKBgQDSuEQpkoWu3PvuKgqhJ9DxbtYYwmKtoZZiki/bnjPM8JjUaQTndSfLmGy3eXNCIo5tV4qT5MKCyZ77cjkDev4NnpszCnnfYRgS4jUAlLVdPHcm3ByE3XrnZUcDfJ7t7E1WKnS7+DB+1NZ4lF+hRE5jR4AKsMDjtFf7SiS2HEbiQQKBgFq9UX3uoC4op/zAcfw+GbtyTItsoupOn+dV+UTXNFzu1bCI9fGM6c4USfGjhoVRE2dO6ShHtKcqNz5l2HMzrOzYay7zYJPre6nJUp1hDpX/cJKS18tKaTj4IxldO2VNDjcV1I6reQXNyJ241afCArH1yVegN5TIgD/N6JBo74yHAoGBAKbQ90AS15wWRw7YHmy865yI4HZxl2vRulJ1Yxl/jAw4LaufR+QqEyjiIk5CgZBruEiPkwK716rPzzAJXMeHDYJET1dE0IXq6tcssQDMDiC7u6pRk5IvFn4AJVBNeJF5hq1T9/2tvbTeFwDzNSVxRdZJBwaaWBXtECmKNhhHRdYF" type="java.lang.String"/>
+                <simple name="java:/danapublickey" value="MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnaKVGRbin4Wh4KN35OPhytJBjYTz7QZKSZjmHfiHxFmulfT87rta+IvGJ0rCBgg+1EtKk1hX8G5gPGJs1htJ5jHa3/jCk9l+luzjnuT9UVlwJahvzmFw+IoDoM7hIPjsLtnIe04SgYo0tZBpEmkQvUGhmHPqYnUGSSMIpDLJDvbyr8gtwluja1SbRphgDCoYVXq+uUJ5HzPS049aaxTSnfXh/qXuDoB9EzCrgppLDS2ubmk21+dr7WaO/3RFjnwx5ouv6w+iC1XOJKar3CTkX6JV1OSST1C9sbPGzMHZ8AGB51BM0mok7davD/5irUk+f0C25OgzkwtxAt80dkDo/QIDAQAB" type="java.lang.String"/>
+                <simple name="java:/danaqueryorderdetail" value="https://api.sandbox.dana.id/dana/acquiring/order/query.htm" type="java.lang.String"/>
+                <simple name="java:/cvm.get.offer.url" value="http://10.64.65.95:8265/rest/authkey/RITA/msisdn/MSISDN_VALUE/offers" type="java.lang.String"/>
+                <simple name="java:/pgcuanredirecturl" value="https://cuanweb.tri.co.id/" type="java.lang.String"/>
+                <simple name="java:/pgritaredirecturl" value="rita2://rita2sit.tri.co.id/" type="java.lang.String"/>
+                <simple name="java:/image.sftp.host" value="10.64.30.10"/>
+                <simple name="java:/image.sftp.username" value="mobapp"/>
+                <simple name="java:/image.sftp.password" value="NULL"/>
+                <simple name="java:/image.server.base.path" value="/home/mobapp/hutchison/rita2/"/>
+                <simple name="java:/tibco.rita.partnerproduct" value="http://10.64.19.14:2493/Business_Process/Retailer_Sellout_Transactions/PartnerProducts.serviceagent/PortTypeEndpoint" type="java.lang.String"/>
+                <simple name="java:/tibco.rita.history.vouchergame" value="http://10.64.19.14:9021/Business_Process/GenericPRMService/PRMService.serviceagent/PortTypeEndpoint1" type="java.lang.String"/>
+                <simple name="java:/report.sftp.host" value="10.64.30.10"/>
+                <simple name="java:/report.sftp.username" value="mobapp"/>
+                <simple name="java:/report.sftp.password" value="mobapp@123"/>
+                <simple name="java:/report.server.base.path" value="/home/mobapp/hutchison/rita2/"/>
+                <simple name="java:/tax.sftp.host" value="10.0.144.133"/>
+                <simple name="java:/tax.sftp.username" value="h3i_bu"/>
+                <simple name="java:/tax.sftp.password" value="hcpt123?"/>
+                <simple name="java:/tax.server.base.path" value="/home/ftp/h3i.mis/daily/DATA/withholding_tax_sit"/>
+                <simple name="java:/rita2.reportserver.url" value="https://rita2sit.tri.co.id/images/"/>
+                <simple name="java:/ecommerce.key" value="b38b730d4cc72115" type="java.lang.String"/>
+                <simple name="java:/ecommerce.iv" value="064df9633d9f5dd0" type="java.lang.String"/>
+                <simple name="java:/product.type.production.estock" value="RITATOPUP,RITAPACKAGE" type="java.lang.String"/>
+                <simple name="java:/tibco.estock.child.transfer" value="http://10.64.19.14:2422/"/>
+                <simple name="java:/tibco.estock.conversion" value="http://10.64.19.15:2511/Business_Process/EVoucher_Interface/EVoucher_Services.serviceagent/EVoucherServicesEndpoint1"/>
+                <simple name="java:/tibco.estock.query" value="http://10.64.19.15:2510/Business_Process/EVoucher_Interface/Receive_EVoucherQuery"/>
+                <simple name="java:/tibco.estock.transfer" value="http://10.64.19.15:2511/Business_Process/EVoucher_Interface/EVoucher_Services.serviceagent/EVoucherServicesEndpoint1"/>
+                <simple name="java:/tibco.rita.voucher" value="http://10.64.19.16:48070"/>
+                <simple name="java:/tibcourlpaymentrequestendpoint" value="http://10.64.20.44:7001/pg/payment/v1"/>
+                <simple name="java:/tibcourlgenericcheckpoint" value="http://10.64.19.17:2522/"/>
+                <simple name="java:/shopeebaseapi" value="https://api.uat.wallet.airpay.co.id/v3/merchant-host/" type="java.lang.String"/>
+                <simple name="java:/shopeecallbackurl" value="https://rita2sit.tri.co.id/" type="java.lang.String"/>
+                <simple name="java:/shopeeclientid" value="Rita" type="java.lang.String"/>
+                <simple name="java:/shopeesecretkey" value="SJt2nFdkSFzTEZV2n02cSZRy4qBDQrn8" type="java.lang.String"/>
+                <simple name="java:/shopeemerchantExtIdApp" value="Rita-app" type="java.lang.String"/>
+                <simple name="java:/shopeestoreExtIdApp" value="TriIndonesia-app" type="java.lang.String"/>
+                <simple name="java:/shopeemerchantExtIdMPM" value="Rita-web" type="java.lang.String"/>
+                <simple name="java:/shopeestoreExtIdMPM" value="TriIndonesia-web" type="java.lang.String"/>
+                <simple name="java:/bimapaybaseapi" value="https://devapi.d-appspecto.com:38065"/>
+                <simple name="java:/bimapayapikey" value="d126d763-9a44-4ccc-81df-ab476678b2de"/>
+                <simple name="java:/bimapayapisecret" value="a3e48003-03c8-4274-9154-a192be267f1c"/>
+                <simple name="java:/bimapayclientid" value="b21069d3-e2c3-43f2-81be-96357af6c635"/>
+                <simple name="java:/bimapayclientsecret" value="7768176f-c024-4d92-9e92-c726801b8689"/>
+                <simple name="java:/bimapayhomepageurl" value="https://rita2sit.tri.co.id/"/>
+                <simple name="java:/bimapaybankdigitalbcabaseapi" value="https://devapi.d-appspecto.com:38065"/>
+                <simple name="java:/spring.redis.cluster.password" value="Redis@bima123" type="java.lang.String"/>
+                <simple name="java:/spring.redis.cluster.max-redirects" value="3"/>
+                <simple name="java:/spring.redis.cluster.nodes[0]" value="10.64.1.57:1010" type="java.lang.String"/>
+                <simple name="java:/spring.redis.cluster.nodes[1]" value="10.64.1.58:1010" type="java.lang.String"/>
+                <simple name="java:/spring.redis.cluster.nodes[2]" value="10.64.1.59:1010" type="java.lang.String"/>
+                <simple name="java:/tibcoUrlRita2HomeEndPoint" value="http://10.64.19.14:2444/Business_Process/P3_Trade_Program/Generic_RITA_APP.serviceagent/RITA_AppEndpoint1" type="java.lang.String"/>
+                <simple name="java:/tibcoUrlRita2ProfileQueryEndPoint" value="http://10.64.19.14:2444/Business_Process/P3_Trade_Program/Generic_RITA_APP.serviceagent/RITA_AppEndpoint1" type="java.lang.String"/>
+                <simple name="java:/tibcoUrlRita2ProfileUpdateEndPoint" value="http://10.64.19.14:2444/Business_Process/P3_Trade_Program/Generic_RITA_APP.serviceagent/RITA_AppEndpoint1" type="java.lang.String"/>
+                <simple name="java:/tibcoUrlRita2ProductActivationEndPoint" value="http://10.64.19.14:2444/Business_Process/P3_Trade_Program/Generic_RITA_APP.serviceagent/RITA_AppEndpoint1" type="java.lang.String"/>
+                <simple name="java:/tibcoUrlRita2ProductWiseTxnEndPoint" value="http://10.64.19.14:2444/Business_Process/P3_Trade_Program/Generic_RITA_APP.serviceagent/RITA_AppEndpoint1" type="java.lang.String"/>
+                <simple name="java:/tibco.esim.msisdn" value="http://10.64.19.16:2536/eai/info/query/queryMSISDN_eSIM" type="java.lang.String"/>
+                <simple name="java:/tibco.send.esim.qrcode.tomail" value="http://10.64.19.16:2536/eai/info/query/fetchESIMQrCode" type="java.lang.String"/>
+                <simple name="java:/tibco.esim.block.msisdn" value="http://10.64.19.14:2481/EAI/DVM/BlockUnblockMSISDN" type="java.lang.String"/>
+                <simple name="java:/tibco.url.frontliner.history.summary" value="http://10.64.19.14:2552/Business_Process/Frontliner_Interface/FLHistorySummaryDetails.serviceagent/PortTypeEndpoint1"/>
+                <simple name="java:/tibco.url.booking.frontliner" value="http://10.64.19.14:2469"/>
+                <simple name="java:/pointri.lms.history.url" value="http://10.64.19.216:8080/lms_hcpt_angie_services/services/TransactionHistoryImpl" type="java.lang.String"/>
+                <simple name="java:/pointri.lms.summary.url" value="http://10.64.19.216:8080/lms_hcpt_angie_services/services/PointriSummary" type="java.lang.String"/>
+                <simple name="java:/pointri.lms.redeem.url" value="http://10.64.19.216:8080/lms_hcpt_angie_services/services/PointriRedemption" type="java.lang.String"/>
+            </bindings>
+            <remote-naming/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:pojo:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:remoting:3.0">
+            <endpoint/>
+            <http-connector name="http-remoting-connector" connector-ref="default" security-realm="ApplicationRealm"/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:resource-adapters:4.0"/>
+        <subsystem xmlns="urn:jboss:domain:request-controller:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:sar:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:security-manager:1.0">
+            <deployment-permissions>
+                <maximum-set>
+                    <permission class="java.security.AllPermission"/>
+                </maximum-set>
+            </deployment-permissions>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:security:1.2">
+            <security-domains>
+                <security-domain name="other" cache-type="default">
+                    <authentication>
+                        <login-module code="Remoting" flag="optional">
+                            <module-option name="password-stacking" value="useFirstPass"/>
+                        </login-module>
+                        <login-module code="RealmDirect" flag="required">
+                            <module-option name="password-stacking" value="useFirstPass"/>
+                        </login-module>
+                    </authentication>
+                </security-domain>
+                <security-domain name="jboss-web-policy" cache-type="default">
+                    <authorization>
+                        <policy-module code="Delegating" flag="required"/>
+                    </authorization>
+                </security-domain>
+                <security-domain name="jboss-ejb-policy" cache-type="default">
+                    <authorization>
+                        <policy-module code="Delegating" flag="required"/>
+                    </authorization>
+                </security-domain>
+                <security-domain name="jaspitest" cache-type="default">
+                    <authentication-jaspi>
+                        <login-module-stack name="dummy">
+                            <login-module code="Dummy" flag="optional"/>
+                        </login-module-stack>
+                        <auth-module code="Dummy"/>
+                    </authentication-jaspi>
+                </security-domain>
+            </security-domains>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:transactions:3.0">
+            <core-environment>
+                <process-id>
+                    <uuid/>
+                </process-id>
+            </core-environment>
+            <recovery-environment socket-binding="txn-recovery-environment" status-socket-binding="txn-status-manager"/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:undertow:3.1">
+            <buffer-cache name="default"/>
+            <server name="default-server">
+                <http-listener name="default" socket-binding="http" redirect-socket="https"/>
+                <host name="default-host" alias="localhost">
+                    <location name="/" handler="welcome-content"/>
+                    <filter-ref name="server-header"/>
+                    <filter-ref name="x-powered-by-header"/>
+                </host>
+            </server>
+            <servlet-container name="default">
+                <jsp-config/>
+                <websockets/>
+            </servlet-container>
+            <handlers>
+                <file name="welcome-content" path="${jboss.home.dir}/welcome-content"/>
+            </handlers>
+            <filters>
+                <response-header name="server-header" header-name="Server" header-value="JBoss-EAP/7"/>
+                <response-header name="x-powered-by-header" header-name="X-Powered-By" header-value="Undertow/1"/>
+            </filters>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:webservices:2.0">
+            <wsdl-host>${jboss.bind.address:10.64.25.25}</wsdl-host>
+            <endpoint-config name="Standard-Endpoint-Config"/>
+            <endpoint-config name="Recording-Endpoint-Config">
+                <pre-handler-chain name="recording-handlers" protocol-bindings="##SOAP11_HTTP ##SOAP11_HTTP_MTOM ##SOAP12_HTTP ##SOAP12_HTTP_MTOM">
+                    <handler name="RecordingHandler" class="org.jboss.ws.common.invocation.RecordingServerHandler"/>
+                </pre-handler-chain>
+            </endpoint-config>
+            <client-config name="Standard-Client-Config"/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:weld:3.0"/>
+    </profile>
+
+    <interfaces>
+        <interface name="management">
+            <inet-address value="${jboss.bind.address.management:0.0.0.0}"/>
+        </interface>
+        <interface name="public">
+            <inet-address value="${jboss.bind.address:0.0.0.0}"/>
+        </interface>
+    </interfaces>
+
+    <socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
+        <socket-binding name="management-http" interface="management" port="${jboss.management.http.port:9990}"/>
+        <socket-binding name="management-https" interface="management" port="${jboss.management.https.port:9993}"/>
+        <socket-binding name="ajp" port="${jboss.ajp.port:8009}"/>
+        <socket-binding name="http" port="${jboss.http.port:8080}"/>
+        <socket-binding name="https" port="${jboss.https.port:8443}"/>
+        <socket-binding name="txn-recovery-environment" port="4712"/>
+        <socket-binding name="txn-status-manager" port="4713"/>
+        <outbound-socket-binding name="mail-smtp">
+            <remote-destination host="localhost" port="25"/>
+        </outbound-socket-binding>
+    </socket-binding-group>
+
+    <deployments>
+        <deployment name="ojdbc8-12.2.0.jar" runtime-name="ojdbc8-12.2.0.jar">
+            <content sha1="60f439fd01536508df32658d0a416c49ac6f07fb"/>
+        </deployment>
+        <deployment name="rita2-service-TM4488_2395_PoinTri_Program_RITA_App_Phase_1-202402162021-d0b352a.war" runtime-name="rita2-service-TM4488_2395_PoinTri_Program_RITA_App_Phase_1-202402162021-d0b352a.war" enabled="false">
+            <content sha1="dbef2d7dc950b6e2e0e277a64cc0c4f046bff8c7"/>
+        </deployment>
+        <deployment name="rita2-service-TM4488_2395_PoinTri_Program_RITA_App_Phase_1-202402211154-d0b352a.war" runtime-name="rita2-service-TM4488_2395_PoinTri_Program_RITA_App_Phase_1-202402211154-d0b352a.war" enabled="false">
+            <content sha1="19da7d6cee83f3cd45d0752063476d25b4c02b59"/>
+        </deployment>
+        <deployment name="rita2-service-TM4488_2395_PoinTri_Program_RITA_App_Phase_1-202402271612-d0b352a.war" runtime-name="rita2-service-TM4488_2395_PoinTri_Program_RITA_App_Phase_1-202402271612-d0b352a.war" enabled="false">
+            <content sha1="a27294cf1ee85758409908b855229883943a06d5"/>
+        </deployment>
+        <deployment name="rita2-service-TM4753_2611_Product-Category-Filter-202402271627-499e2df.war" runtime-name="rita2-service-TM4753_2611_Product-Category-Filter-202402271627-499e2df.war" enabled="false">
+            <content sha1="d62c2d8f8d798408be305d42c65bb6092c56df30"/>
+        </deployment>
+        <deployment name="rita2-service-TM4488_2395_PoinTri_Program_RITA_App_Phase_1-202402281109-bd7806e.war" runtime-name="rita2-service-TM4488_2395_PoinTri_Program_RITA_App_Phase_1-202402281109-bd7806e.war">
+            <content sha1="f116bd1742803bcb466978c961362d048f2e26b5"/>
+        </deployment>
+    </deployments>
+</server>
